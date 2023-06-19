@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Personal Finance Tracker</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="script.js"></script>
+</head>
+<body>
+  <h1>Personal Finance Tracker</h1>
+
+  <div class="form-container">
+    <h2>Add Transaction</h2>
+    <div class="form-group">
+      <label for="dateInput">Date:</label>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="form-group">
+      <label for="incomeInput">Income:</label>
+      <input type="number" id="incomeInput">
+    </div>
+    <div class="form-group">
+      <label for="expenseInput">Expense:</label>
+      <input type="number" id="expenseInput">
+    </div>
+    <div class="form-group">
+      <button onclick="addTransaction()">Add</button>
+    </div>
+  </div>
+
+  <div class="flex-container">
+    <div id="transactionList">
+      <h2>Transaction History</h2>
+      <ul id="list"></ul>
+      <p id="total"></p>
+    </div>
+
+    <div id="chartContainer">
+      <h2>Financial Overview</h2>
+      <canvas id="myChart"></canvas>
+    </div>
+<script>
+
+    // Store the transactions in an array
+    let transactions = [];
+
+    // Function to add a new transaction
+    function addTransaction() {
+      const date = document.getElementById('dateInput').value;
+      const income = parseFloat(document.getElementById('incomeInput').value) || 0;
+      const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
+
+      if (income === 0 && expense === 0) {
+        alert('Please enter either income or expense.');
+        return;
+      }
+
+      const transaction = {
+        date: date,
+        income: income,
+        expense: expense
+      };
+
+      transactions.push(transaction);
+
+      updateTransactionHistory();
+      updateFinancialOverview();
+
+      document.getElementById('dateInput').value = '';
+      document.getElementById('incomeInput').value = '';
+      document.getElementById('expenseInput').value = '';
+    }
+
+    // Function to update the transaction history
+    function updateTransactionHistory() {
+      const list = document.getElementById('list');
+      const totalElement = document.getElementById('total');
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      list.innerHTML = '';
+
+      transactions.forEach(transaction => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          <span>Date: ${transaction.date}</span>
+          <span>Income: ₹${transaction.income.toFixed(2)}</span>
+          <span>Expense: ₹${transaction.expense.toFixed(2)}</span>
+        `;
+
+        list.appendChild(listItem);
+
+        totalIncome += transaction.income;
+        totalExpense += transaction.expense;
+      });
+
+      totalElement.innerHTML = `
+        <strong>Total Income:</strong> ₹${totalIncome.toFixed(2)} |
+        <strong>Total Expense:</strong> ₹${totalExpense.toFixed(2)}
+      `;
+    }
+
+    // Function to update the financial overview chart
+    function updateFinancialOverview() {
+      const chartCanvas = document.getElementById('myChart');
+      const monthlyData = getMonthlyData();
+      const yearlyData = getYearlyData();
+      const weeklyData = getWeeklyData();
+
+      new Chart(chartCanvas, {
+        type: 'line',
+        data: {
+          labels: getMonthNames(),
+          datasets: [
+            {
+              label: 'Monthly',
+              data: monthlyData,
+              borderColor: 'blue',
+              fill: false
+            },
+            {
+              label: 'Yearly',
+              data: yearlyData,
+              borderColor: 'green',
+              fill: false
+            },
+            {
+              label: 'Weekly',
+              data: weeklyData,
+              borderColor: 'red',
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Function to calculate monthly data
+    function getMonthlyData() {
+      const monthlyData = Array(12).fill(0);
+
+      transactions.forEach(transaction => {
+        const month = new Date(transaction.date).getMonth();
+        monthlyData[month] += transaction.income - transaction.expense;
+      });
+
+      return monthlyData;
+    }
+
+    // Function to calculate yearly data
+    function getYearlyData() {
+      const currentYear = new Date().getFullYear();
+      const yearlyData = Array(10).fill(0);
+
+      transactions.forEach(transaction => {
+        const year = new Date(transaction.date).getFullYear();
+        if (year >= currentYear - 9 && year <= currentYear) {
+          yearlyData[currentYear - year] += transaction.income - transaction.expense;
+        }
+      });
+
+      return yearlyData;
+    }
+
+    // Function to calculate weekly data
+    function getWeeklyData() {
+      const currentDate = new Date();
+      const currentWeek = Math.ceil(((currentDate - new Date(currentDate.getFullYear(), 0, 1)) / 86400000 + new Date(currentDate.getFullYear(), 0, 1).getDay() + 1) / 7);
+      const weeklyData = Array(currentWeek).fill(0);
+
+      transactions.forEach(transaction => {
+        const transactionWeek = Math.ceil(((new Date(transaction.date) - new Date(new Date(transaction.date).getFullYear(), 0, 1)) / 86400000 + new Date(new Date(transaction.date).getFullYear(), 0, 1).getDay() + 1) / 7);
+        weeklyData[transactionWeek - 1] += transaction.income - transaction.expense;
+      });
+
+      return weeklyData;
+    }
+
+    // Function to get month names
+    function getMonthNames() {
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+
+      return months;
+    }
+  </script>
+</body>
+</html>
